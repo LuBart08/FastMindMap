@@ -12,22 +12,23 @@
 
         .toolbar {
             position: fixed; top: 0; left: 0; right: 0; background: white;
-            padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 1000; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+            padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
         }
         .toolbar button {
-            padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer;
-            font-size: 14px; transition: all 0.2s ease; background: #667eea; color: white; font-weight: 500;
+            padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 13px; transition: all 0.2s ease; background: #667eea; color: white; font-weight: 500;
         }
-        .toolbar button:hover { background: #5568d3; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3); }
+        .toolbar button:hover { background: #5568d3; transform: translateY(-1px); }
         .toolbar button.danger { background: #e53e3e; } .toolbar button.danger:hover { background: #c53030; }
         .toolbar button.export { background: #38b2ac; } .toolbar button.export:hover { background: #2c7a7b; }
+        .toolbar button.json-btn { background: #d69e2e; color: white; } .toolbar button.json-btn:hover { background: #b7791f; }
         .toolbar button:disabled { background: #a0aec0; cursor: not-allowed; transform: none; }
-        .toolbar-divider { width: 1px; height: 30px; background: #e2e8f0; margin: 0 5px; }
+        .toolbar-divider { width: 1px; height: 24px; background: #e2e8f0; margin: 0 4px; }
 
         .canvas-container {
-            width: 100%; height: calc(100vh - 70px); position: relative; overflow: hidden;
-            background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px); background-size: 20px 20px; margin-top: 70px;
+            width: 100%; height: calc(100vh - 60px); position: relative; overflow: hidden;
+            background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px); background-size: 20px 20px; margin-top: 60px;
         }
         #nodesContainer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform-origin: 0 0; }
         .connection-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; overflow: visible; }
@@ -55,8 +56,6 @@
         }
         .node-action:hover { background: #5568d3; }
         .node-action.del { background: #e53e3e; } .node-action.del:hover { background: #c53030; }
-        .node-action.btn-bold { font-weight: 900; font-family: serif; }
-        .node-action.btn-italic { font-style: italic; font-family: serif; }
 
         .connection-point {
             position: absolute; width: 14px; height: 14px; background: #667eea; border: 2px solid white;
@@ -70,17 +69,38 @@
 
         .resize-handle {
             position: absolute; bottom: 0; right: 0; width: 15px; height: 15px; cursor: nwse-resize; z-index: 25;
-            background: linear-gradient(135deg, transparent 50%, #cbd5e0 50%); border-radius: 0 0 8px 0; opacity: 0.5; transition: opacity 0.2s;
+            background: linear-gradient(135deg, transparent 50%, #cbd5e0 50%); border-radius: 0 0 8px 0; opacity: 0.5;
         }
         .node:hover .resize-handle { opacity: 1; background: linear-gradient(135deg, transparent 50%, #667eea 50%); }
 
         .connection-line { stroke: #667eea; stroke-width: 2; fill: none; }
         .connection-line.drawing { stroke: #e53e3e; stroke-width: 3; stroke-dasharray: 5,5; }
 
-        .hint {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.7);
-            color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; z-index: 1000; pointer-events: none;
+        /* --- MENUS CONTEXTUELS ET POPUPS --- */
+        .custom-context-menu {
+            position: fixed; background: white; border: 1px solid #ddd; border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); padding: 5px 0; z-index: 5000; min-width: 180px; display: none;
         }
+        .context-item {
+            padding: 8px 15px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 10px;
+        }
+        .context-item:hover { background: #667eea; color: white; }
+        .context-item.disabled { color: #aaa; pointer-events: none; }
+        .context-divider { height: 1px; background: #eee; margin: 5px 0; }
+        .context-spelling-header { padding: 5px 15px; font-size: 11px; color: #888; font-weight: bold; }
+        .context-suggestion { padding: 8px 15px; cursor: pointer; font-size: 14px; color: #2b6cb0; font-weight: 500; }
+        .context-suggestion:hover { background: #ebf8ff; }
+
+        .format-popup {
+            position: absolute; background: #2d3748; border-radius: 6px; padding: 5px;
+            display: none; gap: 2px; z-index: 4000; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        .format-popup button {
+            background: transparent; border: none; color: white; padding: 5px 8px; cursor: pointer;
+            border-radius: 4px; font-size: 14px;
+        }
+        .format-popup button:hover { background: #4a5568; }
+
         .notification {
             position: fixed; top: 80px; right: 20px; background: #48bb78; color: white; padding: 15px 25px;
             border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transform: translateX(400px);
@@ -89,41 +109,37 @@
         .notification.show { transform: translateX(0); }
         .notification.error { background: #e53e3e; }
 
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5); z-index: 3000; align-items: center; justify-content: center;
-        }
+        /* Modale */
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 3000; align-items: center; justify-content: center; }
         .modal.visible { display: flex; }
         .modal-content { background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; }
         .modal-title { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #333; }
-        .modal-input, .modal-textarea {
-            width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;
-            font-size: 16px; margin-bottom: 10px; outline: none; font-family: inherit;
-        }
+        .modal-input, .modal-textarea { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; margin-bottom: 10px; outline: none; font-family: inherit; }
         .modal-input:focus, .modal-textarea:focus { border-color: #667eea; }
         .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
-        .modal-footer .btn-cancel { background: #a0aec0; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        .modal-footer .btn-danger { background: #e53e3e; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        .modal-footer .btn-confirm { background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .modal-footer button { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; color: white; }
+        .btn-cancel { background: #a0aec0; } .btn-danger { background: #e53e3e; } .btn-confirm { background: #667eea; }
     </style>
 </head>
 <body>
     <div class="toolbar">
         <button id="addRootBtn">+ Racine</button>
         <div class="toolbar-divider"></div>
-        <button id="saveBtn">💾 Sauvegarder</button>
+        <button id="saveBtn">💾 Sauver</button>
         <button id="loadBtn">📂 Charger</button>
         <button id="clearStorageBtn">🗑️ Effacer</button>
         <div class="toolbar-divider"></div>
-        <button id="zoomInBtn">Zoom +</button>
-        <button id="zoomOutBtn">Zoom -</button>
-        <button id="resetZoomBtn">Réinit</button>
+        <button id="zoomInBtn">➕</button>
+        <button id="zoomOutBtn">➖</button>
         <div class="toolbar-divider"></div>
         <button id="exportPngBtn" class="export">🖼️ PNG</button>
         <button id="exportPdfBtn" class="export">📄 PDF</button>
+        <button id="exportJsonBtn" class="json-btn">💾 JSON</button>
+        <button id="importJsonBtn" class="json-btn">📂 JSON</button>
         <div class="toolbar-divider"></div>
         <button id="clearAllBtn" class="danger">Tout effacer</button>
     </div>
+    <input type="file" id="jsonFileInput" accept=".json" style="display: none;">
 
     <div class="canvas-container" id="canvasContainer">
         <div id="nodesContainer">
@@ -133,7 +149,13 @@
         </div>
     </div>
 
-    <div class="hint">Sélectionnez du texte pour le mettre en forme. Les fautes sont soulignées.</div>
+    <!-- Menus flottants -->
+    <div id="customContextMenu" class="custom-context-menu"></div>
+    <div id="formatPopup" class="format-popup">
+        <button data-action="bold" title="Gras"><b>G</b></button>
+        <button data-action="italic" title="Italique"><i>I</i></button>
+    </div>
+
     <div class="notification" id="notification"></div>
 
     <div class="modal" id="modal">
@@ -151,433 +173,311 @@
     <script>
         class MindMap {
             constructor() {
-                this.nodes = [];
-                this.connections = [];
-                this.selectedNode = null;
-                this.zoomLevel = 1;
-                this.storageKey = 'mindmap_stable_v2';
-                this.modalCallback = null;
-                this.modalMode = null;
+                this.nodes = []; this.connections = []; this.selectedNode = null; this.zoomLevel = 1;
+                this.storageKey = 'mindmap_final_v1'; this.modalCallback = null; this.modalMode = null;
                 this.storageAvailable = this.checkStorage();
                 
                 this.el = {
                     container: document.getElementById('nodesContainer'),
                     canvas: document.getElementById('canvasContainer'),
-                    svg: document.getElementById('connectionSvg'),
-                    line: document.getElementById('connectionLine'),
-                    modal: document.getElementById('modal'),
-                    modalTitle: document.getElementById('modalTitle'),
-                    modalInput: document.getElementById('modalInput'),
-                    modalTextarea: document.getElementById('modalTextarea'),
-                    confirmBtn: document.getElementById('confirmModalBtn'),
-                    notif: document.getElementById('notification')
+                    svg: document.getElementById('connectionSvg'), line: document.getElementById('connectionLine'),
+                    modal: document.getElementById('modal'), modalTitle: document.getElementById('modalTitle'),
+                    modalInput: document.getElementById('modalInput'), modalTextarea: document.getElementById('modalTextarea'),
+                    confirmBtn: document.getElementById('confirmModalBtn'), notif: document.getElementById('notification'),
+                    ctxMenu: document.getElementById('customContextMenu'), formatPopup: document.getElementById('formatPopup'),
+                    jsonInput: document.getElementById('jsonFileInput')
                 };
 
-                this.bindToolbar();
-                this.bindGlobalEvents();
-                
-                if (!this.storageAvailable) {
-                    document.getElementById('saveBtn').disabled = true;
-                    document.getElementById('loadBtn').disabled = true;
-                    document.getElementById('clearStorageBtn').disabled = true;
-                    this.showNotification("Stockage local bloqué.", true);
-                }
+                // Mini dictionnaire pour la démo de correction
+                this.dictionary = { 'bonjou': ['bonjour'], 'ortographe': ['orthographe'], 'quan': ['quand', 'quant'], 'don': ['donne', 'dont'], 'salu': ['salut'], 'merci': ['merci'], 'carte': ['carte'] };
 
-                if (!this.loadFromStorage(true)) {
-                    this.createRootNode();
-                }
+                this.bindToolbar(); this.bindGlobalEvents();
+                if (!this.storageAvailable) { document.getElementById('saveBtn').disabled = true; document.getElementById('loadBtn').disabled = true; }
+                if (!this.loadFromStorage(true)) this.createRootNode();
                 setInterval(() => this.saveToStorage(true), 20000);
             }
 
-            // --- UTILITAIRES ---
             checkStorage() { try { const t = '__t__'; localStorage.setItem(t, t); localStorage.removeItem(t); return true; } catch { return false; } }
             generateId() { return 'n' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
             
             showNotification(message, isError = false) {
-                const n = this.el.notif;
-                n.textContent = message;
-                n.className = 'notification show' + (isError ? ' error' : '');
+                const n = this.el.notif; n.textContent = message; n.className = 'notification show' + (isError ? ' error' : '');
                 setTimeout(() => n.className = 'notification', 3000);
             }
 
-            // --- ÉVÉNEMENTS GLOBAUX ---
             bindToolbar() {
                 const actions = {
-                    addRootBtn: () => this.createRootNode(),
-                    saveBtn: () => this.saveToStorage(false),
-                    loadBtn: () => this.openConfirmModal("Charger la sauvegarde ?", "Les modifications non sauvegardées seront perdues.", () => this.loadFromStorage(false)),
-                    clearStorageBtn: () => this.openConfirmModal("Effacer la sauvegarde ?", "La sauvegarde locale sera supprimée.", () => this.clearStorage()),
-                    zoomInBtn: () => this.setZoom(this.zoomLevel * 1.2),
-                    zoomOutBtn: () => this.setZoom(this.zoomLevel / 1.2),
-                    resetZoomBtn: () => this.setZoom(1),
-                    exportPngBtn: () => this.exportMap('png'),
-                    exportPdfBtn: () => this.exportMap('pdf'),
-                    clearAllBtn: () => this.openConfirmModal("Tout effacer ?", "Toutes les cartes à l'écran seront supprimées.", () => this.clearAll()),
-                    cancelModalBtn: () => this.closeModal(),
-                    confirmModalBtn: () => this.confirmModal()
+                    addRootBtn: () => this.createRootNode(), saveBtn: () => this.saveToStorage(false),
+                    loadBtn: () => this.openConfirmModal("Charger ?", "Les modifications non sauvegardées seront perdues.", () => this.loadFromStorage(false)),
+                    clearStorageBtn: () => this.openConfirmModal("Effacer sauvegarde ?", "", () => this.clearStorage()),
+                    zoomInBtn: () => this.setZoom(this.zoomLevel * 1.2), zoomOutBtn: () => this.setZoom(this.zoomLevel / 1.2),
+                    exportPngBtn: () => this.exportMap('png'), exportPdfBtn: () => this.exportMap('pdf'),
+                    exportJsonBtn: () => this.exportToJSON(), importJsonBtn: () => this.el.jsonInput.click(),
+                    clearAllBtn: () => this.openConfirmModal("Tout effacer ?", "", () => this.clearAll()),
+                    cancelModalBtn: () => this.closeModal(), confirmModalBtn: () => this.confirmModal()
                 };
-                for (const [id, action] of Object.entries(actions)) {
-                    const btn = document.getElementById(id);
-                    if (btn) btn.addEventListener('click', action);
-                }
+                for (const [id, action] of Object.entries(actions)) { const btn = document.getElementById(id); if (btn) btn.addEventListener('click', action); }
+                this.el.jsonInput.addEventListener('change', (e) => this.importFromJSON(e));
             }
 
             bindGlobalEvents() {
-                // Désélection
-                this.el.container.addEventListener('mousedown', (e) => {
-                    if (e.target === this.el.container || e.target.tagName === 'SVG') {
-                        this.deselectAll();
+                // Désélection et fermeture menus
+                window.addEventListener('mousedown', (e) => {
+                    if (!e.target.closest('.node') && !e.target.closest('.custom-context-menu') && !e.target.closest('.format-popup')) {
+                        this.deselectAll(); this.hideMenus();
                     }
                 });
 
-                // Clavier
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') this.closeModal();
-                    if (e.key === 'Delete' && this.selectedNode && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) && !document.activeElement.isContentEditable) {
-                        this.openConfirmModal("Supprimer cette carte ?", "", () => this.deleteNode(this.selectedNode.id));
+                // Menu contextuel personnalisé (Clic droit)
+                document.addEventListener('contextmenu', (e) => {
+                    const nodeContent = e.target.closest('.node-content');
+                    if (nodeContent) {
+                        e.preventDefault(); this.hideMenus();
+                        this.showContextMenu(e.clientX, e.clientY, nodeContent);
+                    } else if (e.target.closest('#nodesContainer')) {
+                        e.preventDefault(); this.hideMenus();
                     }
-                    // Raccourcis formatage
+                });
+
+                // Double clic pour format popup
+                document.addEventListener('dblclick', (e) => {
+                    const nodeContent = e.target.closest('.node-content');
+                    if (nodeContent && window.getSelection().toString().trim() !== '') {
+                        this.showFormatPopup(e.clientX, e.clientY);
+                    }
+                });
+
+                // Raccourcis clavier
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { this.closeModal(); this.hideMenus(); }
+                    if (e.key === 'Delete' && this.selectedNode && !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName) && !document.activeElement.isContentEditable) {
+                        this.openConfirmModal("Supprimer ?", "", () => this.deleteNode(this.selectedNode.id));
+                    }
                     if ((e.ctrlKey || e.metaKey) && document.activeElement.isContentEditable) {
                         if (e.key === 'b') { e.preventDefault(); document.execCommand('bold'); }
                         if (e.key === 'i') { e.preventDefault(); document.execCommand('italic'); }
                     }
                 });
 
-                this.el.container.addEventListener('contextmenu', e => e.preventDefault());
                 this.el.modalInput.addEventListener('keydown', e => { if (e.key === 'Enter') this.confirmModal(); });
             }
 
-            // --- GESTION DE LA MODALE ---
-            openAddModal(parentId) {
-                const parent = this.nodes.find(n => n.id === parentId);
-                if(!parent) return;
+            hideMenus() { this.el.ctxMenu.style.display = 'none'; this.el.formatPopup.style.display = 'none'; }
+
+            // --- LOGIQUE ORTHOGRAPHE & MENUS ---
+            getWordUnderCursor(x, y, element) {
+                if (document.caretRangeFromPoint) {
+                    const range = document.caretRangeFromPoint(x, y);
+                    if (range && range.startContainer.nodeType === Node.TEXT_NODE && element.contains(range.startContainer)) {
+                        const text = range.startContainer.textContent;
+                        const offset = range.startOffset;
+                        const regex = /[a-zA-ZàâäéèêëïîôùûüçœæÀÂÄÉÈÊËÏÎÔÙÛÜÇŒÆ'-]+/gi;
+                        let match;
+                        while ((match = regex.exec(text)) !== null) {
+                            if (offset >= match.index && offset <= match.index + match[0].length) {
+                                return { word: match[0], node: range.startContainer, start: match.index, end: match.index + match[0].length };
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+
+            showContextMenu(x, y, element) {
+                const wordData = this.getWordUnderCursor(x, y, element);
+                let html = '';
                 
-                this.modalMode = 'add';
-                this.el.modalTitle.textContent = `Ajouter à "${parent.title}"`;
+                // Section Orthographe
+                if (wordData) {
+                    const wordLower = wordData.word.toLowerCase();
+                    const suggestions = this.dictionary[wordLower];
+                    if (suggestions) {
+                        html += `<div class="context-spelling-header">Suggestions d'orthographe</div>`;
+                        suggestions.forEach(s => { html += `<div class="context-suggestion" data-action="correct" data-word="${s}" data-start="${wordData.start}" data-end="${wordData.end}" data-nodeid="${element.closest('.node').id}">${s}</div>`; });
+                        html += `<div class="context-divider"></div>`;
+                    }
+                }
+
+                // Section Formatage
+                html += `<div class="context-item" data-action="bold"><b>G</b> Gras</div>`;
+                html += `<div class="context-item" data-action="italic"><i>I</i> Italique</div>`;
+                html += `<div class="context-divider"></div>`;
+                html += `<div class="context-item" data-action="copy">📋 Copier</div>`;
+                html += `<div class="context-item" data-action="paste">📌 Coller</div>`;
+
+                this.el.ctxMenu.innerHTML = html;
+                
+                // Positionnement
+                this.el.ctxMenu.style.left = x + 'px'; this.el.ctxMenu.style.top = y + 'px';
+                this.el.ctxMenu.style.display = 'block';
+
+                // Empêcher le débordement de l'écran
+                const rect = this.el.ctxMenu.getBoundingClientRect();
+                if (rect.right > window.innerWidth) this.el.ctxMenu.style.left = (x - rect.width) + 'px';
+                if (rect.bottom > window.innerHeight) this.el.ctxMenu.style.top = (y - rect.height) + 'px';
+
+                // Écouteurs du menu
+                this.el.ctxMenu.querySelectorAll('.context-item, .context-suggestion').forEach(item => {
+                    item.addEventListener('mousedown', (e) => {
+                        e.preventDefault(); // Empêche la perte de focus
+                        const action = e.target.dataset.action;
+                        if (action === 'correct') this.applyCorrection(e.target.dataset);
+                        else if (action === 'bold') document.execCommand('bold');
+                        else if (action === 'italic') document.execCommand('italic');
+                        else if (action === 'copy') document.execCommand('copy');
+                        else if (action === 'paste') navigator.clipboard.readText().then(text => document.execCommand('insertText', false, text)).catch(() => {});
+                        this.hideMenus();
+                    });
+                });
+            }
+
+            applyCorrection(dataset) {
+                const node = document.getElementById(dataset.nodeid);
+                const content = node.querySelector('.node-content');
+                const textNode = content.firstChild; // Simplification: works if only one text node
+                if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                    const before = textNode.textContent.substring(0, parseInt(dataset.start));
+                    const after = textNode.textContent.substring(parseInt(dataset.end));
+                    textNode.textContent = before + dataset.word + after;
+                } else {
+                    // Fallback si HTML complexe
+                    const sel = window.getSelection();
+                    sel.collapse(textNode, parseInt(dataset.start));
+                    sel.extend(textNode, parseInt(dataset.end));
+                    document.execCommand('insertText', false, dataset.word);
+                }
+            }
+
+            showFormatPopup(x, y) {
+                this.el.formatPopup.style.left = x + 'px'; this.el.formatPopup.style.top = (y - 45) + 'px';
+                this.el.formatPopup.style.display = 'flex';
+                this.el.formatPopup.querySelectorAll('button').forEach(btn => {
+                    btn.onmousedown = (e) => e.preventDefault(); // Garde la sélection
+                    btn.onclick = (e) => { document.execCommand(e.target.closest('button').dataset.action); this.hideMenus(); };
+                });
+            }
+
+            // --- MODALE ---
+            openAddModal(parentId) {
+                const parent = this.nodes.find(n => n.id === parentId); if(!parent) return;
+                this.modalMode = 'add'; this.el.modalTitle.textContent = `Ajouter à "${parent.title}"`;
                 this.el.modalInput.style.display = 'block'; this.el.modalInput.value = '';
                 this.el.modalTextarea.style.display = 'block'; this.el.modalTextarea.value = '';
                 this.el.confirmBtn.textContent = 'Ajouter'; this.el.confirmBtn.className = 'btn-confirm';
-                this.el.modal.classList.add('visible');
-                this.el.modalInput.focus();
-
-                this.modalCallback = (title, text) => {
-                    const newNode = this.createNode(title, text, parent.x + 200, parent.y);
-                    this.addConnection(parentId, newNode.id, 'right', 'left');
-                };
+                this.el.modal.classList.add('visible'); this.el.modalInput.focus();
+                this.modalCallback = (title, text) => { const n = this.createNode(title, text, parent.x + 200, parent.y); this.addConnection(parentId, n.id, 'right', 'left'); };
             }
-
             openConfirmModal(title, text, callback) {
-                this.modalMode = 'confirm';
-                this.el.modalTitle.textContent = title;
-                this.el.modalInput.style.display = 'none';
-                this.el.modalTextarea.style.display = text ? 'block' : 'none';
-                this.el.modalTextarea.value = text;
+                this.modalMode = 'confirm'; this.el.modalTitle.textContent = title;
+                this.el.modalInput.style.display = 'none'; this.el.modalTextarea.style.display = text ? 'block' : 'none'; this.el.modalTextarea.value = text;
                 this.el.confirmBtn.textContent = 'Confirmer'; this.el.confirmBtn.className = 'btn-danger';
-                this.el.modal.classList.add('visible');
-                this.modalCallback = () => callback();
+                this.el.modal.classList.add('visible'); this.modalCallback = () => callback();
             }
-
-            closeModal() {
-                this.el.modal.classList.remove('visible');
-                this.modalCallback = null; this.modalMode = null;
-            }
-
+            closeModal() { this.el.modal.classList.remove('visible'); this.modalCallback = null; this.modalMode = null; }
             confirmModal() {
-                if (this.modalMode === 'confirm') {
-                    if (this.modalCallback) this.modalCallback();
-                } else if (this.modalMode === 'add') {
-                    const title = this.el.modalInput.value.trim();
-                    const text = this.el.modalTextarea.value.trim();
-                    if (title && this.modalCallback) this.modalCallback(title, text);
-                    else this.showNotification("Veuillez entrer un nom.", true);
-                }
+                if (this.modalMode === 'confirm') { if (this.modalCallback) this.modalCallback(); }
+                else if (this.modalMode === 'add') { const t = this.el.modalInput.value.trim(), x = this.el.modalTextarea.value.trim(); if (t && this.modalCallback) this.modalCallback(t, x); else this.showNotification("Nom requis.", true); }
                 this.closeModal();
             }
 
-            // --- GESTION DES NŒUDS ---
-            createRootNode() {
-                const x = (this.el.canvas.clientWidth / 2 - 75) / this.zoomLevel;
-                const y = 150 / this.zoomLevel;
-                this.createNode('Racine', '', x, y);
-            }
-
+            // --- NŒUDS ---
+            createRootNode() { this.createNode('Racine', '', (this.el.canvas.clientWidth / 2 - 75) / this.zoomLevel, 150 / this.zoomLevel); }
             createNode(title, text, x, y, id = null, w = null, h = null) {
-                const nodeId = id || this.generateId();
-                const el = document.createElement('div');
-                el.className = 'node'; el.id = nodeId;
-                el.style.left = x + 'px'; el.style.top = y + 'px';
-                if (w) el.style.width = w + 'px';
-                if (h) el.style.height = h + 'px';
-
+                const nodeId = id || this.generateId(); const el = document.createElement('div');
+                el.className = 'node'; el.id = nodeId; el.style.left = x + 'px'; el.style.top = y + 'px';
+                if (w) el.style.width = w + 'px'; if (h) el.style.height = h + 'px';
                 el.innerHTML = `
-                    <div class="node-actions">
-                        <button class="node-action btn-bold" title="Gras (Ctrl+B)">G</button>
-                        <button class="node-action btn-italic" title="Italique (Ctrl+I)">I</button>
-                        <button class="node-action btn-add">+</button>
-                        <button class="node-action del">×</button>
-                    </div>
+                    <div class="node-actions"><button class="node-action btn-add">+</button><button class="node-action del">×</button></div>
                     <div class="node-content" contenteditable="true" spellcheck="true" lang="fr">${title}</div>
-                    <div class="connection-point left" data-pos="left"></div>
-                    <div class="connection-point right" data-pos="right"></div>
-                    <div class="connection-point top" data-pos="top"></div>
-                    <div class="connection-point bottom" data-pos="bottom"></div>
-                    <div class="resize-handle"></div>
-                `;
-
-                // Actions internes
-                const preventBlur = e => e.preventDefault();
-                el.querySelector('.btn-bold').addEventListener('mousedown', preventBlur);
-                el.querySelector('.btn-bold').addEventListener('click', e => { e.stopPropagation(); document.execCommand('bold'); });
-                el.querySelector('.btn-italic').addEventListener('mousedown', preventBlur);
-                el.querySelector('.btn-italic').addEventListener('click', e => { e.stopPropagation(); document.execCommand('italic'); });
+                    <div class="connection-point left" data-pos="left"></div><div class="connection-point right" data-pos="right"></div>
+                    <div class="connection-point top" data-pos="top"></div><div class="connection-point bottom" data-pos="bottom"></div>
+                    <div class="resize-handle"></div>`;
+                
                 el.querySelector('.btn-add').addEventListener('click', e => { e.stopPropagation(); this.openAddModal(nodeId); });
                 el.querySelector('.del').addEventListener('click', e => { e.stopPropagation(); this.openConfirmModal("Supprimer ?", "", () => this.deleteNode(nodeId)); });
-
-                // Connexions
-                el.querySelectorAll('.connection-point').forEach(pt => {
-                    pt.addEventListener('mousedown', e => this.startConnectionDrag(e, nodeId, pt.dataset.pos));
-                });
-
-                // Drag & Drop
+                el.querySelectorAll('.connection-point').forEach(pt => pt.addEventListener('mousedown', e => this.startConnectionDrag(e, nodeId, pt.dataset.pos)));
+                
                 el.addEventListener('mousedown', e => {
                     if (e.target.classList.contains('connection-point') || e.target.classList.contains('node-action') || e.target.isContentEditable || e.target.classList.contains('resize-handle')) return;
-                    this.selectNode(nodeId);
-                    const startX = e.clientX, startY = e.clientY, origX = el.offsetLeft, origY = el.offsetTop;
-                    const move = ev => {
-                        const dx = (ev.clientX - startX) / this.zoomLevel, dy = (ev.clientY - startY) / this.zoomLevel;
-                        const newX = origX + dx, newY = origY + dy;
-                        el.style.left = newX + 'px'; el.style.top = newY + 'px';
-                        const data = this.nodes.find(n => n.id === nodeId);
-                        if(data) { data.x = newX; data.y = newY; }
-                        this.updateConnections();
-                    };
+                    this.selectNode(nodeId); const sx = e.clientX, sy = e.clientY, ox = el.offsetLeft, oy = el.offsetTop;
+                    const move = ev => { const nx = ox + (ev.clientX-sx)/this.zoomLevel, ny = oy + (ev.clientY-sy)/this.zoomLevel; el.style.left=nx+'px'; el.style.top=ny+'px'; const d=this.nodes.find(n=>n.id===nodeId); if(d){d.x=nx;d.y=ny;} this.updateConnections(); };
                     const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
                     document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
                 });
 
-                // Redimensionnement
                 el.querySelector('.resize-handle').addEventListener('mousedown', e => {
-                    e.stopPropagation(); e.preventDefault();
-                    const startX = e.clientX, startY = e.clientY, startW = el.offsetWidth, startH = el.offsetHeight;
-                    const resize = ev => {
-                        const nw = Math.max(100, startW + (ev.clientX - startX) / this.zoomLevel);
-                        const nh = Math.max(50, startH + (ev.clientY - startY) / this.zoomLevel);
-                        el.style.width = nw + 'px'; el.style.height = nh + 'px';
-                        const data = this.nodes.find(n => n.id === nodeId);
-                        if(data) { data.w = nw; data.h = nh; }
-                        this.adjustNodeFontSize(el); this.updateConnections();
-                    };
-                    const up = () => { document.removeEventListener('mousemove', resize); document.removeEventListener('mouseup', up); };
-                    document.addEventListener('mousemove', resize); document.addEventListener('mouseup', up);
+                    e.stopPropagation(); e.preventDefault(); const sx = e.clientX, sy = e.clientY, sw = el.offsetWidth, sh = el.offsetHeight;
+                    const res = ev => { el.style.width=Math.max(100,sw+(ev.clientX-sx)/this.zoomLevel)+'px'; el.style.height=Math.max(50,sh+(ev.clientY-sy)/this.zoomLevel)+'px'; const d=this.nodes.find(n=>n.id===nodeId); if(d){d.w=el.offsetWidth;d.h=el.offsetHeight;} this.adjustNodeFontSize(el); this.updateConnections(); };
+                    const up = () => { document.removeEventListener('mousemove', res); document.removeEventListener('mouseup', up); };
+                    document.addEventListener('mousemove', res); document.addEventListener('mouseup', up);
                 });
 
                 this.el.container.appendChild(el);
                 const nodeData = { id: nodeId, title, text, x, y, w: w || el.offsetWidth, h: h || el.offsetHeight, element: el };
-                this.nodes.push(nodeData);
-                this.adjustNodeFontSize(el);
-                return nodeData;
+                this.nodes.push(nodeData); this.adjustNodeFontSize(el); return nodeData;
             }
-
-            adjustNodeFontSize(nodeEl) {
-                const w = nodeEl.offsetWidth, h = nodeEl.offsetHeight;
-                const content = nodeEl.querySelector('.node-content');
-                if (content) {
-                    let fs = Math.min(w / 8, h / 2.5);
-                    fs = Math.max(12, Math.min(fs, 60)); // Min 12px, Max 60px
-                    content.style.fontSize = fs + 'px';
-                }
-            }
-
-            deselectAll() {
-                if (this.selectedNode) { this.selectedNode.element.classList.remove('selected'); this.selectedNode = null; }
-            }
-
-            selectNode(id) {
-                this.deselectAll();
-                const data = this.nodes.find(n => n.id === id);
-                this.selectedNode = data;
-                if(data) data.element.classList.add('selected');
-            }
-
-            deleteNode(id) {
-                this.connections = this.connections.filter(c => c.from !== id && c.to !== id);
-                const index = this.nodes.findIndex(n => n.id === id);
-                if (index !== -1) { this.nodes[index].element.remove(); this.nodes.splice(index, 1); }
-                if(this.selectedNode && this.selectedNode.id === id) this.selectedNode = null;
-                this.updateConnections();
-            }
-
-            clearAll() {
-                this.nodes.forEach(n => n.element.remove());
-                this.nodes = []; this.connections = []; this.selectedNode = null;
-                this.updateConnections();
-            }
+            adjustNodeFontSize(n) { const c=n.querySelector('.node-content'); if(c){ let fs=Math.min(n.offsetWidth/8, n.offsetHeight/2.5); c.style.fontSize=Math.max(12,Math.min(fs,60))+'px'; } }
+            deselectAll() { if(this.selectedNode) this.selectedNode.element.classList.remove('selected'); this.selectedNode=null; }
+            selectNode(id) { this.deselectAll(); const d=this.nodes.find(n=>n.id===id); this.selectedNode=d; if(d) d.element.classList.add('selected'); }
+            deleteNode(id) { this.connections=this.connections.filter(c=>c.from!==id&&c.to!==id); const i=this.nodes.findIndex(n=>n.id===id); if(i!==-1){this.nodes[i].element.remove();this.nodes.splice(i,1);} if(this.selectedNode&&this.selectedNode.id===id)this.selectedNode=null; this.updateConnections(); }
+            clearAll() { this.nodes.forEach(n=>n.element.remove()); this.nodes=[]; this.connections=[]; this.selectedNode=null; this.updateConnections(); }
 
             // --- CONNEXIONS ---
-            addConnection(fromId, toId, fromPos, toPos) {
-                if (fromId === toId) return;
-                const exists = this.connections.some(c => 
-                    (c.from === fromId && c.to === toId) || (c.from === toId && c.to === fromId)
-                );
-                if (!exists) { this.connections.push({ from: fromId, to: toId, fromPos, toPos }); this.updateConnections(); }
+            addConnection(f, t, fp, tp) { if(f===t)return; if(!this.connections.some(c=>(c.from===f&&c.to===t)||(c.from===t&&c.to===f))){this.connections.push({from:f,to:t,fromPos:fp,toPos:tp});this.updateConnections();} }
+            getPointCoords(n, p) { const x=n.element.offsetLeft,y=n.element.offsetTop,w=n.element.offsetWidth,h=n.element.offsetHeight; if(p==='left')return{x,y:y+h/2}; if(p==='right')return{x:x+w,y:y+h/2}; if(p==='top')return{x:x+w/2,y}; if(p==='bottom')return{x:x+w/2,y:y+h}; return{x:x+w/2,y:y+h/2}; }
+            getClosestPoint(n, tx, ty) { let mD=Infinity,cP='right'; ['left','right','top','bottom'].forEach(p=>{const c=this.getPointCoords(n,p);const d=Math.hypot(c.x-tx,c.y-ty);if(d<mD){mD=d;cP=p;}}); return cP; }
+            startConnectionDrag(e, id, pos) {
+                e.stopPropagation(); e.preventDefault(); const r=this.el.container.getBoundingClientRect(); const sC=this.getPointCoords(this.nodes.find(n=>n.id===id),pos);
+                this.el.line.setAttribute('x1',sC.x); this.el.line.setAttribute('y1',sC.y); this.el.line.setAttribute('x2',sC.x); this.el.line.setAttribute('y2',sC.y); this.el.line.classList.add('drawing');
+                const move = ev => { this.el.line.setAttribute('x2',(ev.clientX-r.left)/this.zoomLevel); this.el.line.setAttribute('y2',(ev.clientY-r.top)/this.zoomLevel); };
+                const up = ev => { document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); this.el.line.classList.remove('drawing');
+                    const tE=document.elementFromPoint(ev.clientX,ev.clientY); const tN=tE?tE.closest('.node'):null;
+                    if(tN&&tN.id!==id){ const tD=this.nodes.find(n=>n.id===tN.id); let tP=tE.classList.contains('connection-point')?tE.dataset.pos:null; if(!tP)tP=this.getClosestPoint(tD,(ev.clientX-r.left)/this.zoomLevel,(ev.clientY-r.top)/this.zoomLevel); this.addConnection(id,tN.id,pos,tP); }
+                }; document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
+            }
+            updateConnections() { this.el.svg.querySelectorAll('path').forEach(p=>p.remove()); this.connections.forEach(c=>{ const f=this.nodes.find(n=>n.id===c.from),t=this.nodes.find(n=>n.id===c.to); if(f&&t){ const p1=this.getPointCoords(f,c.fromPos||'right'),p2=this.getPointCoords(t,c.toPos||'left'); const path=document.createElementNS('http://www.w3.org/2000/svg','path'); path.setAttribute('d',this.createBezierPath(p1,p2,c.fromPos,c.toPos)); path.setAttribute('class','connection-line'); this.el.svg.appendChild(path); } }); }
+            createBezierPath(p1,p2,pp1,pp2) { const d=Math.hypot(p2.x-p1.x,p2.y-p1.y),o=Math.max(d*0.5,40); let x1=p1.x,y1=p1.y,x2=p2.x,y2=p2.y; if(pp1==='right')x1+=o;else if(pp1==='left')x1-=o;else if(pp1==='bottom')y1+=o;else if(pp1==='top')y1-=o; if(pp2==='right')x2+=o;else if(pp2==='left')x2-=o;else if(pp2==='bottom')y2+=o;else if(pp2==='top')y2-=o; return `M ${p1.x} ${p1.y} C ${x1} ${y1}, ${x2} ${y2}, ${p2.x} ${p2.y}`; }
+
+            // --- EXPORT JSON ---
+            exportToJSON() {
+                const data = { nodes: this.nodes.map(n => ({ id: n.id, title: n.element.querySelector('.node-content').innerHTML, text: n.text, x: n.x, y: n.y, w: n.element.offsetWidth, h: n.element.offsetHeight })), connections: this.connections, zoom: this.zoomLevel };
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+                const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "carte-mentale.json"; a.click(); URL.revokeObjectURL(a.href);
+                this.showNotification("JSON Exporté !");
+            }
+            importFromJSON(event) {
+                const file = event.target.files[0]; if (!file) return;
+                const reader = new FileReader(); reader.onload = (e) => {
+                    try {
+                        const data = JSON.parse(e.target.result); this.clearAll();
+                        data.nodes.forEach(nd => this.createNode(nd.title, nd.text || '', nd.x, nd.y, nd.id, nd.w, nd.h));
+                        this.connections = data.connections || []; this.setZoom(data.zoom || 1); this.updateConnections();
+                        this.showNotification("JSON Importé !");
+                    } catch { this.showNotification("Fichier JSON invalide.", true); }
+                }; reader.readAsText(file); event.target.value = ''; // Reset input
             }
 
-            getPointCoords(nodeData, position) {
-                const x = nodeData.element.offsetLeft, y = nodeData.element.offsetTop;
-                const w = nodeData.element.offsetWidth, h = nodeData.element.offsetHeight;
-                if (position === 'left') return { x, y: y + h / 2 };
-                if (position === 'right') return { x: x + w, y: y + h / 2 };
-                if (position === 'top') return { x: x + w / 2, y };
-                if (position === 'bottom') return { x: x + w / 2, y: y + h };
-                return { x: x + w / 2, y: y + h / 2 };
-            }
-
-            getClosestPoint(nodeData, targetX, targetY) {
-                const pos = ['left', 'right', 'top', 'bottom'];
-                let minDist = Infinity, closest = 'right';
-                for (const p of pos) {
-                    const coord = this.getPointCoords(nodeData, p);
-                    const dist = Math.hypot(coord.x - targetX, coord.y - targetY);
-                    if (dist < minDist) { minDist = dist; closest = p; }
-                }
-                return closest;
-            }
-
-            startConnectionDrag(e, nodeId, startPos) {
-                e.stopPropagation(); e.preventDefault();
-                const rect = this.el.container.getBoundingClientRect();
-                const startCoords = this.getPointCoords(this.nodes.find(n => n.id === nodeId), startPos);
-                
-                this.el.line.setAttribute('x1', startCoords.x); this.el.line.setAttribute('y1', startCoords.y);
-                this.el.line.setAttribute('x2', startCoords.x); this.el.line.setAttribute('y2', startCoords.y);
-                this.el.line.classList.add('drawing');
-
-                const move = ev => {
-                    this.el.line.setAttribute('x2', (ev.clientX - rect.left) / this.zoomLevel);
-                    this.el.line.setAttribute('y2', (ev.clientY - rect.top) / this.zoomLevel);
-                };
-                const up = ev => {
-                    document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up);
-                    this.el.line.classList.remove('drawing');
-                    
-                    const targetEl = document.elementFromPoint(ev.clientX, ev.clientY);
-                    const targetNode = targetEl ? targetEl.closest('.node') : null;
-                    if (targetNode && targetNode.id !== nodeId) {
-                        const toData = this.nodes.find(n => n.id === targetNode.id);
-                        let toPos = targetEl.classList.contains('connection-point') ? targetEl.dataset.pos : null;
-                        if (!toPos) toPos = this.getClosestPoint(toData, (ev.clientX - rect.left) / this.zoomLevel, (ev.clientY - rect.top) / this.zoomLevel);
-                        this.addConnection(nodeId, targetNode.id, startPos, toPos);
-                    }
-                };
-                document.addEventListener('mousemove', move); document.addEventListener('mouseup', up);
-            }
-
-            updateConnections() {
-                const svg = this.el.svg;
-                svg.querySelectorAll('path').forEach(p => p.remove());
-                this.connections.forEach(conn => {
-                    const fromData = this.nodes.find(n => n.id === conn.from);
-                    const toData = this.nodes.find(n => n.id === conn.to);
-                    if (fromData && toData) {
-                        const p1 = this.getPointCoords(fromData, conn.fromPos || 'right');
-                        const p2 = this.getPointCoords(toData, conn.toPos || 'left');
-                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                        path.setAttribute('d', this.createBezierPath(p1, p2, conn.fromPos, conn.toPos));
-                        path.setAttribute('class', 'connection-line');
-                        svg.appendChild(path);
-                    }
-                });
-            }
-
-            createBezierPath(p1, p2, pos1, pos2) {
-                const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
-                const offset = Math.max(dist * 0.5, 40);
-                let cx1 = p1.x, cy1 = p1.y, cx2 = p2.x, cy2 = p2.y;
-                if (pos1 === 'right') cx1 += offset; else if (pos1 === 'left') cx1 -= offset;
-                else if (pos1 === 'bottom') cy1 += offset; else if (pos1 === 'top') cy1 -= offset;
-                if (pos2 === 'right') cx2 += offset; else if (pos2 === 'left') cx2 -= offset;
-                else if (pos2 === 'bottom') cy2 += offset; else if (pos2 === 'top') cy2 -= offset;
-                return `M ${p1.x} ${p1.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p2.x} ${p2.y}`;
-            }
-
-            // --- EXPORT ---
+            // --- EXPORT IMAGE / PDF ---
             async exportMap(type) {
-                if (typeof html2canvas === 'undefined' || (type === 'pdf' && typeof window.jspdf === 'undefined')) {
-                    return this.showNotification("Bibliothèques d'export non chargées.", true);
-                }
+                if (typeof html2canvas==='undefined'||(type==='pdf'&&typeof window.jspdf==='undefined')) return this.showNotification("Bibliothèques non chargées.", true);
                 this.showNotification("Export en cours...", false);
-
-                // Calcul des bornes
-                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                this.nodes.forEach(n => {
-                    minX = Math.min(minX, n.x); minY = Math.min(minY, n.y);
-                    maxX = Math.max(maxX, n.x + n.element.offsetWidth);
-                    maxY = Math.max(maxY, n.y + n.element.offsetHeight);
-                });
-                const pad = 50, mapW = maxX - minX + pad*2, mapH = maxY - minY + pad*2;
-
-                // Ajustement DOM temporaire
-                const ct = this.el.container;
-                ct.style.transform = 'none'; ct.style.width = `${mapW}px`; ct.style.height = `${mapH}px`;
-                this.nodes.forEach(n => { n.element.style.left = `${n.x - minX + pad}px`; n.element.style.top = `${n.y - minY + pad}px`; });
-                this.updateConnections();
-
-                try {
-                    const canvas = await html2canvas(ct, { backgroundColor: '#f0f2f5', scale: 2, width: mapW, height: mapH });
-                    if (type === 'png') {
-                        const link = document.createElement('a'); link.download = 'carte-mentale.png'; link.href = canvas.toDataURL('image/png'); link.click();
-                    } else {
-                        const { jsPDF } = window.jspdf; const img = canvas.toDataURL('image/png');
-                        const pxMm = 0.264583, pdfW = mapW * pxMm, pdfH = mapH * pxMm;
-                        const pdf = new jsPDF({ orientation: mapW > mapH ? 'l' : 'p', unit: 'mm', format: [pdfW, pdfH] });
-                        pdf.addImage(img, 'PNG', 0, 0, pdfW, pdfH); pdf.save('carte-mentale.pdf');
-                    }
+                let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity; this.nodes.forEach(n=>{minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);maxX=Math.max(maxX,n.x+n.element.offsetWidth);maxY=Math.max(maxY,n.y+n.element.offsetHeight);});
+                const pad=50,mW=maxX-minX+pad*2,mH=maxY-minY+pad*2,ct=this.el.container;
+                ct.style.transform='none';ct.style.width=`${mW}px`;ct.style.height=`${mH}px`;
+                this.nodes.forEach(n=>{n.element.style.left=`${n.x-minX+pad}px`;n.element.style.top=`${n.y-minY+pad}px`;}); this.updateConnections();
+                try { const canvas=await html2canvas(ct,{backgroundColor:'#f0f2f5',scale:2,width:mW,height:mH});
+                    if(type==='png'){const l=document.createElement('a');l.download='carte.png';l.href=canvas.toDataURL('image/png');l.click();}
+                    else{const{jsPDF}=window.jspdf;const i=canvas.toDataURL('image/png');const r=mW*0.264583,b=mH*0.264583;const p=new jsPDF({orientation:mW>mH?'l':'p',unit:'mm',format:[r,b]});p.addImage(i,'PNG',0,0,r,b);p.save('carte.pdf');}
                     this.showNotification("Export réussi !");
-                } catch (err) {
-                    console.error(err); this.showNotification("Erreur d'export.", true);
-                } finally {
-                    // Restauration DOM
-                    this.nodes.forEach(n => { n.element.style.left = `${n.x}px`; n.element.style.top = `${n.y}px`; });
-                    ct.style.transform = `scale(${this.zoomLevel})`; ct.style.width = '100%'; ct.style.height = '100%';
-                    this.updateConnections();
-                }
+                } catch(e){console.error(e);this.showNotification("Erreur d'export.",true);}
+                finally{this.nodes.forEach(n=>{n.element.style.left=`${n.x}px`;n.element.style.top=`${n.y}px`;});ct.style.transform=`scale(${this.zoomLevel})`;ct.style.width='100%';ct.style.height='100%';this.updateConnections();}
             }
 
-            // --- STOCKAGE ---
-            setZoom(v) { this.zoomLevel = Math.min(Math.max(v, 0.3), 3); this.el.container.style.transform = `scale(${this.zoomLevel})`; this.updateConnections(); }
-
-            saveToStorage(silent = false) {
-                if (!this.storageAvailable) return;
-                try {
-                    const data = {
-                        nodes: this.nodes.map(n => ({ id: n.id, title: n.element.querySelector('.node-content').innerHTML, text: n.text, x: n.x, y: n.y, w: n.element.offsetWidth, h: n.element.offsetHeight })),
-                        connections: this.connections, zoom: this.zoomLevel
-                    };
-                    localStorage.setItem(this.storageKey, JSON.stringify(data));
-                    if (!silent) this.showNotification('Sauvegardé !');
-                } catch { if (!silent) this.showNotification("Erreur de sauvegarde.", true); }
-            }
-
-            loadFromStorage(silent = false) {
-                if (!this.storageAvailable) return false;
-                try {
-                    const str = localStorage.getItem(this.storageKey);
-                    if (!str) { if (!silent) this.showNotification('Aucune sauvegarde trouvée.', true); return false; }
-                    const data = JSON.parse(str);
-                    this.clearAll(); // Nettoie proprement l'existant
-                    data.nodes.forEach(nd => this.createNode(nd.title, nd.text || '', nd.x, nd.y, nd.id, nd.w, nd.h));
-                    this.connections = (data.connections || []).filter(c => this.nodes.some(n => n.id === c.from) && this.nodes.some(n => n.id === c.to));
-                    this.setZoom(data.zoom || 1);
-                    this.updateConnections();
-                    if (!silent) this.showNotification('Chargé !');
-                    return true;
-                } catch { if (!silent) this.showNotification("Sauvegarde corrompue.", true); return false; }
-            }
-
-            clearStorage() {
-                if (!this.storageAvailable) return;
-                localStorage.removeItem(this.storageKey); this.showNotification('Sauvegarde effacée.');
-            }
+            // --- STOCKAGE LOCAL ---
+            setZoom(v) { this.zoomLevel=Math.min(Math.max(v,0.3),3); this.el.container.style.transform=`scale(${this.zoomLevel})`; this.updateConnections(); }
+            saveToStorage(silent=false) { if(!this.storageAvailable)return; try{const d={nodes:this.nodes.map(n=>({id:n.id,title:n.element.querySelector('.node-content').innerHTML,text:n.text,x:n.x,y:n.y,w:n.element.offsetWidth,h:n.element.offsetHeight})),connections:this.connections,zoom:this.zoomLevel};localStorage.setItem(this.storageKey,JSON.stringify(d));if(!silent)this.showNotification('Sauvegardé !');}catch{if(!silent)this.showNotification("Erreur.",true);} }
+            loadFromStorage(silent=false) { if(!this.storageAvailable)return false; try{const s=localStorage.getItem(this.storageKey);if(!s){if(!silent)this.showNotification('Aucune sauvegarde.',true);return false;} const d=JSON.parse(s);this.clearAll();d.nodes.forEach(nd=>this.createNode(nd.title,nd.text||'',nd.x,nd.y,nd.id,nd.w,nd.h));this.connections=d.connections||[];this.setZoom(d.zoom||1);this.updateConnections();if(!silent)this.showNotification('Chargé !');return true;}catch{if(!silent)this.showNotification("Corrompu.",true);return false;} }
+            clearStorage() { if(!this.storageAvailable)return; localStorage.removeItem(this.storageKey); this.showNotification('Sauvegarde effacée.'); }
         }
 
         window.addEventListener('DOMContentLoaded', () => new MindMap());
