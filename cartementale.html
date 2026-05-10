@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte Mentale Pro</title>
+    <!-- Bibliothèques pour l'export Image / PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: white;
+            padding: 15px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .toolbar button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            background: #667eea;
+            color: white;
+            font-weight: 500;
+        }
+
+        .toolbar button:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .toolbar button.danger { background: #e53e3e; }
+        .toolbar button.danger:hover { background: #c53030; }
+        .toolbar button.export { background: #38b2ac; }
+        .toolbar button.export:hover { background: #2c7a7b; }
+        .toolbar button:disabled { background: #a0aec0; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .toolbar-divider { width: 1px; height: 30px; background: #e2e8f0; margin: 0 5px; }
+
+        .canvas-container {
+            width: 100%;
+            height: calc(100vh - 70px);
+            position: relative;
+            overflow: hidden;
+            background-image: radial-gradient(circle, #e2e8f0 1px, transparent 1px);
+            background-size: 20px 20px;
+            margin-top: 70px;
+        }
+
+        #nodesContainer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            transform-origin: 0 0;
+        }
+
+        .connection-svg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 1;
+            overflow: visible;
+        }
+
+        .node {
+            position: absolute;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 15px 20px;
+            min-width: 100px;
+            min-height: 50px;
+            cursor: move;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            user-select: none;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .node:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+
+        .node.selected {
+            border-color: #e53e3e;
+            box-shadow: 0 6px 20px rgba(229, 62, 62, 0.3);
+        }
+
+        .node-content {
+            outline: none;
+            color: #333;
+            width: 100%;
+            flex-grow: 1;
+            padding: 0;
+            border: none;
+            background: transparent;
+            word-wrap: break-word;
+            overflow-y: auto;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .node-content:focus {
+            background: #f8f9ff;
+            border-radius: 5px;
+            padding: 5px;
+            outline: 2px solid #667eea;
+        }
+
+        .node-actions {
+            position: absolute;
+            top: -40px; right: 0;
+            display: none;
+            gap: 5px;
+        }
+
+        .node.selected .node-actions { display: flex; }
+
+        .node-action {
+            width: 30px; height: 30px;
+            border: none; border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center; justify-content: center;
+            background: #667eea; color: white;
+            line-height: 1;
+        }
+
+        .node-action:hover { background: #5568d3; }
+        .node-action.del { background: #e53e3e; }
+        .node-action.del:hover { background: #c53030; }
+        .node-action.btn-bold { font-weight: 900; font-family: serif; }
+        .node-action.btn-italic { font-style: italic; font-family: serif; }
+
+        .connection-point {
+            position: absolute;
+            width: 14px; height: 14px;
+            background: #667eea;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: crosshair;
+            z-index: 20;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .connection-point:hover {
+            transform: scale(1.5);
+            background: #e53e3e;
+        }
+
+        .connection-point.left { left: -8px; top: 50%; margin-top: -8px; }
+        .connection-point.right { right: -8px; top: 50%; margin-top: -8px; }
+        .connection-point.top { left: 50%; top: -8px; margin-left: -8px; }
+        .connection-point.bottom { left: 50%; bottom: -8px; margin-left: -8px; }
+
+        .resize-handle {
+            position: absolute;
+            bottom: 0; right: 0;
+            width: 15px; height: 15px;
+            cursor: nwse-resize;
+            z-index: 25;
+            background: linear-gradient(135deg, transparent 50%, #cbd5e0 50%);
+            border-radius: 0 0 8px 0;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .node:hover .resize-handle {
+            opacity: 1;
+            background: linear-gradient(135deg, transparent 50%, #667eea 50%);
+        }
+
+        .connection-line { stroke: #667eea; stroke-width: 2; fill: none; }
+        .connection-line.drawing { stroke: #e53e3e; stroke-width: 3; stroke-dasharray: 5,5; }
+
+        .hint {
+            position: fixed;
+            bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .notification {
+            position: fixed;
+            top: 80px; right: 20px;
+            background: #48bb78;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+        }
+
+        .notification.show { transform: translateX(0); }
+        .notification.error { background: #e53e3e; }
+
+        .modal {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.visible { display: flex; }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-title { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #333; }
+        
+        .modal-input, .modal-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 10px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .modal-input:focus, .modal-textarea:focus { border-color: #667eea; }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .modal-footer .btn-cancel { background: #a0aec0; }
+        .modal-footer .btn-danger { background: #e53e3e; }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button id="addRootBtn">+ Racine</button>
+        <div class="toolbar-divider"></div>
+        <button id="saveBtn">💾 Sauvegarder</button>
+        <button id="loadBtn">📂 Charger</button>
+        <button id="clearStorageBtn">🗑️ Effacer sauvegarde</button>
+        <div class="toolbar-divider"></div>
+        <button id="zoomInBtn">Zoom +</button>
+        <button id="zoomOutBtn">Zoom -</button>
+        <button id="resetZoomBtn">Réinit Zoom</button>
+        <div class="toolbar-divider"></div>
+        <button id="exportPngBtn" class="export">🖼️ Exporter PNG</button>
+        <button id="exportPdfBtn" class="export">📄 Exporter PDF</button>
+        <div class="toolbar-divider"></div>
+        <button id="clearAllBtn" class="danger">Tout effacer</button>
+    </div>
+
+    <div class="canvas-container" id="canvasContainer">
+        <div id="nodesContainer">
+            <svg class="connection-svg" id="connectionSvg">
+                <line class="connection-line" id="connectionLine" x1="0" y1="0" x2="0" y2="0"></line>
+            </svg>
+        </div>
+    </div>
+
+    <div class="hint">Sélectionnez du texte pour le mettre en forme. Les fautes sont soulignées.</div>
+    <div class="notification" id="notification"></div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-title" id="modalTitle">Action</div>
+            <input type="text" class="modal-input" id="modalInput" placeholder="Nom de la carte">
+            <textarea class="modal-textarea" id="modalTextarea" placeholder="Ajouter des descriptions..."></textarea>
+            <div class="modal-footer">
+                <button id="cancelModalBtn" class="btn-cancel">Annuler</button>
+                <button id="confirmModalBtn" class="btn-confirm">Valider</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class MindMap {
+            constructor() {
+                this.nodes = [];
+                this.connections = [];
+                this.selectedNode = null;
+                this.zoomLevel = 1;
+                this.storageKey = 'mindmap_export_v1';
+                this.modalCallback = null;
+                this.modalMode = null;
+                this.storageAvailable = this.checkStorage();
+                
+                this.el = {
+                    container: document.getElementById('nodesContainer'),
+                    canvas: document.getElementById('canvasContainer'),
+                    svg: document.getElementById('connectionSvg'),
+                    line: document.getElementById('connectionLine'),
+                    modal: document.getElementById('modal'),
+                    modalTitle: document.getElementById('modalTitle'),
+                    modalInput: document.getElementById('modalInput'),
+                    modalTextarea: document.getElementById('modalTextarea'),
+                    confirmBtn: document.getElementById('confirmModalBtn'),
+                    notif: document.getElementById('notification')
+                };
+
+                this.bindToolbar();
+                this.bindGlobalEvents();
+                
+                if (!this.storageAvailable) {
+                    document.getElementById('saveBtn').disabled = true;
+                    document.getElementById('loadBtn').disabled = true;
+                    document.getElementById('clearStorageBtn').disabled = true;
+                    this.showNotification("Stockage local bloqué. Sauvegarde désactivée.", true);
+                }
+
+                if (!this.loadFromStorage(true)) {
+                    this.createRootNode();
+                }
+
+                setInterval(() => this.saveToStorage(true), 15000);
+            }
+
+            checkStorage() {
+                try {
+                    const test = '__test__';
+                    localStorage.setItem(test, test);
+                    localStorage.removeItem(test);
+                    return true;
+                } catch (e) { return false; }
+            }
+
+            generateId() { return 'n' + Math.random().toString(36).substr(2, 9); }
+
+            showNotification(message, isError = false) {
+                const n = this.el.notif;
+                n.textContent = message;
+                n.className = 'notification show' + (isError ? ' error' : '');
+                setTimeout(() => n.className = 'notification', 3000);
+            }
+
+            bindToolbar() {
+                const actions = {
+                    addRootBtn: () => this.createRootNode(),
+                    saveBtn: () => this.saveToStorage(false),
+                    loadBtn: () => this.openConfirmModal("Charger la sauvegarde ?", "Les modifications non sauvegardées seront perdues.", () => this.loadFromStorage(false)),
+                    clearStorageBtn: () => this.openConfirmModal("Effacer la sauvegarde ?", "La sauvegarde locale sera définitivement supprimée.", () => this.clearStorage()),
+                    zoomInBtn: () => this.setZoom(this.zoomLevel * 1.2),
+                    zoomOutBtn: () => this.setZoom(this.zoomLevel / 1.2),
+                    resetZoomBtn: () => this.setZoom(1),
+                    exportPngBtn: () => this.exportMap('png'),
+                    exportPdfBtn: () => this.exportMap('pdf'),
+                    clearAllBtn: () => this.openConfirmModal("Tout effacer ?", "Toutes les cartes actuelles à l'écran seront supprimées.", () => this.clearAll()),
+                    cancelModalBtn: () => this.closeModal(),
+                    confirmModalBtn: () => this.confirmModal()
+                };
+
+                for (const [id, action] of Object.entries(actions)) {
+                    const btn = document.getElementById(id);
+                    if (btn) btn.addEventListener('click', action);
+                }
+            }
+
+            bindGlobalEvents() {
+                this.el.container.addEventListener('mousedown', (e) => {
+                    if (e.target === this.el.container || e.target.tagName === 'SVG') {
+                        if (this.selectedNode) {
+                            this.selectedNode.element.classList.remove('selected');
+                            this.selectedNode = null;
+                        }
+                    }
+                });
+
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') this.closeModal();
+                    if (e.key === 'Delete' && this.selectedNode && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA' && !document.activeElement.isContentEditable) {
+                        this.openConfirmModal("Supprimer cette carte ?", "", () => {
+                            this.deleteNode(this.selectedNode.id);
+                            this.selectedNode = null;
+                        });
+                    }
+                    if ((e.ctrlKey || e.metaKey) && document.activeElement.isContentEditable) {
+                        if (e.key === 'b') { e.preventDefault(); document.execCommand('bold'); }
+                        if (e.key === 'i') { e.preventDefault(); document.execCommand('italic'); }
+                    }
+                });
+
+                this.el.container.addEventListener('contextmenu', e => e.preventDefault());
+                this.el.modalInput.addEventListener('keydown', e => { if (e.key === 'Enter') this.confirmModal(); });
+            }
+
+            // --- MODALE ---
+            openAddModal(parentId) {
+                const parent = this.nodes.find(n => n.id === parentId);
+                if(!parent) return;
+                
+                this.modalMode = 'add';
+                this.el.modalTitle.textContent = `Ajouter à "${parent.title}"`;
+                this.el.modalInput.style.display = 'block';
+                this.el.modalTextarea.style.display = 'block';
+                this.el.modalInput.value = '';
+                this.el.modalTextarea.value = '';
+                this.el.confirmBtn.textContent = 'Ajouter';
+                this.el.confirmBtn.className = 'btn-confirm';
+                this.el.modal.classList.add('visible');
+                this.el.modalInput.focus();
+
+                this.modalCallback = (title, text) => {
+                    const newX = parent.x + 200;
+                    const newY = parent.y;
+                    const newNode = this.createNode(title, text, newX, newY);
+                    this.addConnection(parentId, newNode.id, 'right', 'left');
+                };
+            }
+
+            openConfirmModal(title, text, callback) {
+                this.modalMode = 'confirm';
+                this.el.modalTitle.textContent = title;
+                this.el.modalInput.style.display = 'none';
+                this.el.modalTextarea.style.display = text ? 'block' : 'none';
+                this.el.modalTextarea.value = text;
+                this.el.modalTextarea.readOnly = true;
+                this.el.confirmBtn.textContent = 'Confirmer';
+                this.el.confirmBtn.className = 'btn-danger';
+                this.el.modal.classList.add('visible');
+                this.modalCallback = () => callback();
+            }
+
+            closeModal() {
+                this.el.modal.classList.remove('visible');
+                this.modalCallback = null;
+                this.modalMode = null;
+                this.el.modalTextarea.readOnly = false;
+            }
+
+            confirmModal() {
+                if (this.modalMode === 'confirm') {
+                    if (this.modalCallback) this.modalCallback();
+                } else if (this.modalMode === 'add') {
+                    const title = this.el.modalInput.value.trim();
+                    const text = this.el.modalTextarea.value.trim();
+                    if (this.modalCallback && title) {
+                        this.modalCallback(title, text);
+                    } else {
+                        this.showNotification("Veuillez entrer un nom.", true);
+                        return;
+                    }
+                }
+                this.closeModal();
+            }
+
+            // --- NŒUDS ---
+            createRootNode() {
+                const x = (this.el.canvas.clientWidth / 2 - 75) / this.zoomLevel;
+                const y = 150 / this.zoomLevel;
+                this.createNode('Racine', '', x, y);
+            }
+
+            createNode(title, text, x, y, id = null, w = null, h = null) {
+                const nodeId = id || this.generateId();
+                const el = document.createElement('div');
+                el.className = 'node';
+                el.id = nodeId;
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                
+                if (w) el.style.width = w + 'px';
+                if (h) el.style.height = h + 'px';
+
+                el.innerHTML = `
+                    <div class="node-actions">
+                        <button class="node-action btn-bold" title="Gras (Ctrl+B)">G</button>
+                        <button class="node-action btn-italic" title="Italique (Ctrl+I)">I</button>
+                        <button class="node-action btn-add">+</button>
+                        <button class="node-action del">×</button>
+                    </div>
+                    <div class="node-content" contenteditable="true" spellcheck="true" lang="fr">${title}</div>
+                    <div class="connection-point left" data-pos="left"></div>
+                    <div class="connection-point right" data-pos="right"></div>
+                    <div class="connection-point top" data-pos="top"></div>
+                    <div class="connection-point bottom" data-pos="bottom"></div>
+                    <div class="resize-handle"></div>
+                `;
+
+                const preventFocusLoss = (e) => e.preventDefault();
+
+                el.querySelector('.btn-bold').addEventListener('mousedown', preventFocusLoss);
+                el.querySelector('.btn-bold').addEventListener('click', (e) => { e.stopPropagation(); document.execCommand('bold'); });
+
+                el.querySelector('.btn-italic').addEventListener('mousedown', preventFocusLoss);
+                el.querySelector('.btn-italic').addEventListener('click', (e) => { e.stopPropagation(); document.execCommand('italic'); });
+
+                el.querySelector('.btn-add').addEventListener('click', (e) => { e.stopPropagation(); this.openAddModal(nodeId); });
+                el.querySelector('.del').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.openConfirmModal("Supprimer cette carte ?", "", () => {
+                        this.deleteNode(nodeId);
+                        if(this.selectedNode && this.selectedNode.id === nodeId) this.selectedNode = null;
+                    });
+                });
+
+                el.querySelectorAll('.connection-point').forEach(pt => {
+                    pt.addEventListener('mousedown', (e) => this.startConnectionDrag(e, nodeId, pt.dataset.pos));
+                });
+
+                el.addEventListener('mousedown', (e) => {
+                    if (e.target.classList.contains('connection-point') || e.target.classList.contains('node-action') || e.target.isContentEditable || e.target.classList.contains('resize-handle')) return;
+                    this.selectNode(nodeId);
+                    
+                    const startX = e.clientX, startY = e.clientY;
+                    const origX = el.offsetLeft, origY = el.offsetTop;
+
+                    const move = (ev) => {
+                        const dx = (ev.clientX - startX) / this.zoomLevel;
+                        const dy = (ev.clientY - startY) / this.zoomLevel;
+                        const newX = origX + dx, newY = origY + dy;
+                        el.style.left = newX + 'px'; el.style.top = newY + 'px';
+                        
+                        const data = this.nodes.find(n => n.id === nodeId);
+                        if(data) { data.x = newX; data.y = newY; }
+                        this.updateConnections();
+                    };
+
+                    const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); };
+                    document.addEventListener('mousemove', move);
+                    document.addEventListener('mouseup', up);
+                });
+
+                el.querySelector('.resize-handle').addEventListener('mousedown', (e) => {
+                    e.stopPropagation(); e.preventDefault();
+                    const startX = e.clientX, startY = e.clientY;
+                    const startWidth = el.offsetWidth, startHeight = el.offsetHeight;
+
+                    const resizeMove = (ev) => {
+                        const dx = (ev.clientX - startX) / this.zoomLevel;
+                        const dy = (ev.clientY - startY) / this.zoomLevel;
+                        const newWidth = Math.max(100, startWidth + dx);
+                        const newHeight = Math.max(50, startHeight + dy);
+                        el.style.width = newWidth + 'px'; el.style.height = newHeight + 'px';
+                        
+                        const data = this.nodes.find(n => n.id === nodeId);
+                        if(data) { data.w = newWidth; data.h = newHeight; }
+                        this.adjustNodeFontSize(el);
+                        this.updateConnections();
+                    };
+
+                    const resizeUp = () => { document.removeEventListener('mousemove', resizeMove); document.removeEventListener('mouseup', resizeUp); };
+                    document.addEventListener('mousemove', resizeMove);
+                    document.addEventListener('mouseup', resizeUp);
+                });
+
+                this.el.container.appendChild(el);
+                const nodeData = { id: nodeId, title, text, x, y, w: w || el.offsetWidth, h: h || el.offsetHeight, element: el };
+                this.nodes.push(nodeData);
+                this.adjustNodeFontSize(el);
+                return nodeData;
+            }
+
+            adjustNodeFontSize(nodeEl) {
+                const w = nodeEl.offsetWidth, h = nodeEl.offsetHeight;
+                const content = nodeEl.querySelector('.node-content');
+                if (content) {
+                    let fontSize = Math.min(w / 8, h / 2.5);
+                    fontSize = Math.max(12, Math.min(fontSize, 60));
+                    content.style.fontSize = fontSize + 'px';
+                }
+            }
+
+            selectNode(id) {
+                if (this.selectedNode) this.selectedNode.element.classList.remove('selected');
+                const data = this.nodes.find(n => n.id === id);
+                this.selectedNode = data;
+                if(data) data.element.classList.add('selected');
+            }
+
+            deleteNode(id) {
+                this.connections = this.connections.filter(c => c.from !== id && c.to !== id);
+                const index = this.nodes.findIndex(n => n.id === id);
+                if (index !== -1) { this.nodes[index].element.remove(); this.nodes.splice(index, 1); }
+                this.updateConnections();
+            }
+
+            clearAll() {
+                this.nodes.forEach(n => n.element.remove());
+                this.nodes = []; this.connections = []; this.selectedNode = null;
+                this.updateConnections();
+                this.showNotification("Carte effacée.");
+            }
+
+            // --- CONNEXIONS ---
+            addConnection(fromId, toId, fromPos, toPos) {
+                if (fromId === toId) return;
+                const exists = this.connections.some(c => 
+                    (c.from === fromId && c.to === toId && c.fromPos === fromPos && c.toPos === toPos) ||
+                    (c.from === toId && c.to === fromId && c.fromPos === toPos && c.toPos === fromPos)
+                );
+                if (!exists) { this.connections.push({ from: fromId, to: toId, fromPos, toPos }); this.updateConnections(); }
+            }
+
+            getPointCoords(nodeData, position) {
+                const el = nodeData.element;
+                // Utilisation de offsetLeft/Top pour plus de fiabilité lors des exports temporaires
+                const x = el.offsetLeft, y = el.offsetTop;
+                const w = el.offsetWidth, h = el.offsetHeight;
+
+                if (position === 'left') return { x, y: y + h / 2 };
+                if (position === 'right') return { x: x + w, y: y + h / 2 };
+                if (position === 'top') return { x: x + w / 2, y };
+                if (position === 'bottom') return { x: x + w / 2, y: y + h };
+                return { x: x + w / 2, y: y + h / 2 };
+            }
+
+            getClosestPoint(nodeData, targetX, targetY) {
+                const positions = ['left', 'right', 'top', 'bottom'];
+                let minDist = Infinity, closest = 'right';
+                for (const pos of positions) {
+                    const coord = this.getPointCoords(nodeData, pos);
+                    const dist = Math.hypot(coord.x - targetX, coord.y - targetY);
+                    if (dist < minDist) { minDist = dist; closest = pos; }
+                }
+                return closest;
+            }
+
+            startConnectionDrag(e, nodeId, startPos) {
+                e.stopPropagation(); e.preventDefault();
+                const containerRect = this.el.container.getBoundingClientRect();
+                const startNodeData = this.nodes.find(n => n.id === nodeId);
+                const startCoords = this.getPointCoords(startNodeData, startPos);
+
+                this.el.line.setAttribute('x1', startCoords.x); this.el.line.setAttribute('y1', startCoords.y);
+                this.el.line.setAttribute('x2', startCoords.x); this.el.line.setAttribute('y2', startCoords.y);
+                this.el.line.classList.add('drawing');
+
+                const move = (ev) => {
+                    const x = (ev.clientX - containerRect.left) / this.zoomLevel;
+                    const y = (ev.clientY - containerRect.top) / this.zoomLevel;
+                    this.el.line.setAttribute('x2', x); this.el.line.setAttribute('y2', y);
+                };
+
+                const up = (ev) => {
+                    document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up);
+                    this.el.line.classList.remove('drawing');
+                    this.el.line.setAttribute('x1', 0); this.el.line.setAttribute('y1', 0);
+                    this.el.line.setAttribute('x2', 0); this.el.line.setAttribute('y2', 0);
+
+                    const targetEl = document.elementFromPoint(ev.clientX, ev.clientY);
+                    const targetNodeEl = targetEl ? targetEl.closest('.node') : null;
+
+                    if (targetNodeEl && targetNodeEl.id !== nodeId) {
+                        const toId = targetNodeEl.id;
+                        const toData = this.nodes.find(n => n.id === toId);
+                        let toPos = targetEl.classList.contains('connection-point') ? targetEl.dataset.pos : null;
+                        if (!toPos) {
+                            const dropX = (ev.clientX - containerRect.left) / this.zoomLevel;
+                            const dropY = (ev.clientY - containerRect.top) / this.zoomLevel;
+                            toPos = this.getClosestPoint(toData, dropX, dropY);
+                        }
+                        this.addConnection(nodeId, toId, startPos, toPos);
+                    }
+                };
+
+                document.addEventListener('mousemove', move);
+                document.addEventListener('mouseup', up);
+            }
+
+            updateConnections() {
+                const svg = this.el.svg;
+                svg.querySelectorAll('path').forEach(p => p.remove());
+                this.connections.forEach(conn => {
+                    const fromData = this.nodes.find(n => n.id === conn.from);
+                    const toData = this.nodes.find(n => n.id === conn.to);
+                    if (fromData && toData) {
+                        const p1 = this.getPointCoords(fromData, conn.fromPos || 'right');
+                        const p2 = this.getPointCoords(toData, conn.toPos || 'left');
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', this.createBezierPath(p1, p2, conn.fromPos, conn.toPos));
+                        path.setAttribute('class', 'connection-line');
+                        svg.appendChild(path);
+                    }
+                });
+            }
+
+            createBezierPath(p1, p2, pos1, pos2) {
+                const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+                const offset = Math.max(dist * 0.5, 40);
+                let cx1 = p1.x, cy1 = p1.y, cx2 = p2.x, cy2 = p2.y;
+                if (pos1 === 'right') cx1 = p1.x + offset; else if (pos1 === 'left') cx1 = p1.x - offset;
+                else if (pos1 === 'bottom') cy1 = p1.y + offset; else if (pos1 === 'top') cy1 = p1.y - offset;
+                if (pos2 === 'right') cx2 = p2.x + offset; else if (pos2 === 'left') cx2 = p2.x - offset;
+                else if (pos2 === 'bottom') cy2 = p2.y + offset; else if (pos2 === 'top') cy2 = p2.y - offset;
+                return `M ${p1.x} ${p1.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${p2.x} ${p2.y}`;
+            }
+
+            // --- EXPORT IMAGE / PDF ---
+            async exportMap(type) {
+                if (typeof html2canvas === 'undefined' || (type === 'pdf' && typeof window.jspdf === 'undefined')) {
+                    this.showNotification("Bibliothèques d'export non chargées. Vérifiez votre connexion internet.", true);
+                    return;
+                }
+
+                this.showNotification("Export en cours de préparation...", false);
+
+                // 1. Calculer la boîte englobante de toute la carte
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                this.nodes.forEach(n => {
+                    minX = Math.min(minX, n.x);
+                    minY = Math.min(minY, n.y);
+                    maxX = Math.max(maxX, n.x + n.element.offsetWidth);
+                    maxY = Math.max(maxY, n.y + n.element.offsetHeight);
+                });
+
+                const padding = 50; // Marge autour de la carte
+                const mapWidth = maxX - minX + padding * 2;
+                const mapHeight = maxY - minY + padding * 2;
+
+                // 2. Ajuster temporairement le DOM pour l'export (sans espace blanc, zoom réinitialisé)
+                const container = this.el.container;
+                container.style.transform = 'none'; // Annuler le zoom
+                container.style.width = `${mapWidth}px`;
+                container.style.height = `${mapHeight}px`;
+                
+                // Déplacer les nœuds pour qu'ils s'alignent parfaitement dans la nouvelle boîte
+                this.nodes.forEach(n => {
+                    n.element.style.left = `${n.x - minX + padding}px`;
+                    n.element.style.top = `${n.y - minY + padding}px`;
+                });
+                this.updateConnections(); // Met à jour les lignes avec les nouvelles positions
+
+                try {
+                    // 3. Capturer l'image
+                    const canvas = await html2canvas(container, {
+                        backgroundColor: '#f0f2f5', // Même couleur que le fond
+                        scale: 2, // Haute définition
+                        width: mapWidth,
+                        height: mapHeight
+                    });
+
+                    // 4. Télécharger
+                    if (type === 'png') {
+                        const link = document.createElement('a');
+                        link.download = 'carte-mentale.png';
+                        link.href = canvas.toDataURL('image/png');
+                        link.click();
+                    } else if (type === 'pdf') {
+                        const { jsPDF } = window.jspdf;
+                        const imgData = canvas.toDataURL('image/png');
+                        
+                        // Conversion pixels en mm (approximatif pour A4 ou taille personnalisée)
+                        const pxToMm = 0.264583;
+                        const pdfWidth = mapWidth * pxToMm;
+                        const pdfHeight = mapHeight * pxToMm;
+                        
+                        const pdf = new jsPDF({
+                            orientation: mapWidth > mapHeight ? 'l' : 'p',
+                            unit: 'mm',
+                            format: [pdfWidth, pdfHeight] // Le PDF s'ajuste exactement à la taille de la carte
+                        });
+                        
+                        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                        pdf.save('carte-mentale.pdf');
+                    }
+
+                    this.showNotification("Export terminé !", false);
+                } catch (err) {
+                    console.error(err);
+                    this.showNotification("Erreur lors de l'export.", true);
+                } finally {
+                    // 5. Restaurer le DOM à son état normal
+                    this.nodes.forEach(n => {
+                        n.element.style.left = `${n.x}px`;
+                        n.element.style.top = `${n.y}px`;
+                    });
+                    container.style.transform = `scale(${this.zoomLevel})`;
+                    container.style.width = '100%';
+                    container.style.height = '100%';
+                    this.updateConnections();
+                }
+            }
+
+            // --- STOCKAGE ---
+            setZoom(value) {
+                this.zoomLevel = Math.min(Math.max(value, 0.3), 3);
+                this.el.container.style.transform = `scale(${this.zoomLevel})`;
+                this.updateConnections();
+            }
+
+            saveToStorage(silent = false) {
+                if (!this.storageAvailable) return;
+                try {
+                    const data = {
+                        nodes: this.nodes.map(n => ({
+                            id: n.id,
+                            title: n.element.querySelector('.node-content').innerHTML,
+                            text: n.text, x: n.x, y: n.y,
+                            w: n.element.offsetWidth, h: n.element.offsetHeight
+                        })),
+                        connections: this.connections,
+                        zoom: this.zoomLevel
+                    };
+                    localStorage.setItem(this.storageKey, JSON.stringify(data));
+                    if (!silent) this.showNotification('Projet sauvegardé !');
+                } catch (e) {
+                    if (!silent) this.showNotification("Erreur lors de la sauvegarde.", true);
+                }
+            }
+
+            loadFromStorage(silent = false) {
+                if (!this.storageAvailable) return false;
+                try {
+                    const dataStr = localStorage.getItem(this.storageKey);
+                    if (!dataStr) { if (!silent) this.showNotification('Aucune sauvegarde trouvée.', true); return false; }
+
+                    const data = JSON.parse(dataStr);
+                    this.nodes.forEach(n => n.element.remove());
+                    this.nodes = []; this.connections = []; this.selectedNode = null;
+
+                    data.nodes.forEach(nd => this.createNode(nd.title, nd.text || '', nd.x, nd.y, nd.id, nd.w, nd.h));
+                    this.connections = (data.connections || []).filter(c => this.nodes.some(n => n.id === c.from) && this.nodes.some(n => n.id === c.to));
+                    
+                    this.setZoom(data.zoom || 1);
+                    this.updateConnections();
+                    if (!silent) this.showNotification('Projet chargé !');
+                    return true;
+                } catch (e) {
+                    if (!silent) this.showNotification("Fichier de sauvegarde corrompu.", true);
+                    return false;
+                }
+            }
+
+            clearStorage() {
+                if (!this.storageAvailable) return;
+                try { localStorage.removeItem(this.storageKey); this.showNotification('Sauvegarde locale effacée.'); } 
+                catch (e) { this.showNotification("Impossible d'effacer la sauvegarde.", true); }
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => new MindMap());
+    </script>
+</body>
+</html>
